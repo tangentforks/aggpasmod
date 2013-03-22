@@ -27,7 +27,7 @@ interface
 {$I AggCompiler.inc}
 
 // With this define uncommented you can use FreeType font engine
-{-$DEFINE AGG2D_USE_FREETYPE }
+{$DEFINE AGG2D_USE_FREETYPE 1}
 
 uses
   AggBasics,
@@ -65,11 +65,15 @@ uses
   AggVertexSource,
   AggRenderScanLines,
 
-{$IFDEF AGG2D_USE_FREETYPE}
+{$IFDEF WINDOWS}
+  {$IFDEF AGG2D_USE_FREETYPE}
   AggFontFreeType,
-{$ELSE}
+  {$ELSE}
   AggFontWin32TrueType,
   Windows,
+  {$ENDIF}
+{$ELSE}
+  AggFontFreeType,
 {$ENDIF}
   Math;
 
@@ -82,12 +86,12 @@ type
 
   TAggFontScanLine = TAggGray8ScanLine;
 
-{$IFDEF AGG2D_USE_FREETYPE }
+{$IFDEF AGG2D_USE_FREETYPE}
   TAggFontEngine = TAggFontEngineFreetypeInt32;
-{$ELSE }
+{$ELSE}
   TAggFontEngine = TAggFontEngineWin32TrueTypeInt32;
 {$ENDIF}
-
+  
   TAggGradient = (grdSolid, grdLinear, grdRadial);
   TAggDirection = (dirCW, dirCCW);
 
@@ -220,8 +224,10 @@ type
     FPathTransform: TAggConvTransform;
     FStrokeTransform: TAggConvTransform;
 
-{$IFNDEF AGG2D_USE_FREETYPE}
+{$IFDEF WINDOWS}
+  {$IFNDEF AGG2D_USE_FREETYPE}
     FFontDC: HDC;
+ {$ENDIF}
 {$ENDIF}
 
     FFontEngine: TAggFontEngine;
@@ -745,12 +751,15 @@ begin
   FPathTransform := TAggConvTransform.Create(FConvCurve, FTransform);
   FStrokeTransform := TAggConvTransform.Create(FConvStroke, FTransform);
 
-{$IFDEF AGG2D_USE_FREETYPE}
+{$IFDEF WINDOWS}
+  {$IFDEF AGG2D_USE_FREETYPE}
   FFontEngine := TAggFontEngineFreetypeInt32.Create;
-{$ELSE}
+  {$ELSE}
   FFontDC := GetDC(0);
-
   FFontEngine := TAggFontEngineWin32TrueTypeInt32.Create(FFontDC);
+  {$ENDIF}
+{$ELSE}
+  FFontEngine := TAggFontEngineFreetypeInt32.Create;
 {$ENDIF}
 
   FFontCacheManager := TAggFontCacheManager.Create(FFontEngine);

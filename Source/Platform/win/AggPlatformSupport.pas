@@ -153,7 +153,7 @@ type
     kcTab = 9,
     kcClear = 12,
     kcReturn = 13,
-    kcPause = 19,
+    kcause = 19,
     kcEscape = 27,
 
     // Keypad

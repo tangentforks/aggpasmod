@@ -3,7 +3,7 @@ program Agg2DDemo;
 // AggPas 2.4 RM3 Demo application
 // Note: Press F1 key on run to see more info about this demo
 
-{$I AggCompiler.inc}
+{$I aggcompiler.inc}
 
 uses
   {$IFDEF USE_FASTMM4}
@@ -14,10 +14,10 @@ uses
   AggPlatformSupport, // please add the path to this file manually
   AggFileUtils, // please add the path to this file manually
 
-  AggBasics in '..\..\Source\AggBasics.pas',
-  AggTransAffine in '..\..\Source\AggTransAffine.pas',
-  AggPixelFormat in '..\..\Source\AggPixelFormat.pas',
-  Agg2D in '..\..\Source\Agg2D.pas';
+  AggBasics,
+  AggTransAffine,
+  AggPixelFormat,
+  Agg2D;
 
 {-$DEFINE ViewportOptionAnisotropic}
 {-$DEFINE FontCacheRaster}
@@ -664,7 +664,6 @@ begin
   with TAggApplication.Create(pfBgra32, CFlipY) do
   try
     Caption := 'Agg2DDemo (F1-Help)';
-
     ImageName := 'spheres2';
 
 {$IFDEF WIN32}
@@ -680,11 +679,11 @@ begin
     begin
       Text := 'File not found: ' + ImageName + ImageExtension;
       if ImageName = 'spheres2' then
-        Text := Text + #13#13 + 'Download http://www.antigrain.com/'
-          + ImageName + ImageExtension + #13 + 'or copy it from another ' +
+        Text := Text + LineEnding + 'Download http://www.antigrain.com/'
+          + ImageName + ImageExtension + LineEnding + 'or copy it from another ' +
           'directory if available.';
 
-      DisplayMessage(Text);
+     DisplayMessage(PChar(Text));
     end
     else if Init(600, 600, [wfResize]) then
       Run;

@@ -48,11 +48,11 @@ unit AggPlatformSupport;
 
 interface
 
-{$I AggCompiler.inc}
+{$I aggcompiler.inc}
 {$I- }
 
 uses
-  X, Xlib, Xutil, Xatom, Keysym, Libc, CTypes, SysUtils,
+  X, Xlib, Xutil, Xatom, Keysym, baseunix, CTypes, SysUtils,
   AggBasics,
   AggControl,
   AggRenderingBuffer,
@@ -68,7 +68,7 @@ type
   // cannot use a hardware buffer (window_hw_buffer).
   // The implementation should simply ignore unsupported flags.
   TWindowFlag = (wfResize, wfHardwareBuffer, wfKeepAspectRatio,
-    wfProcessAllKeys)
+    wfProcessAllKeys);
   TWindowFlags = set of TWindowFlag;
 
   // -----------------------------------------------------------------------
@@ -116,11 +116,11 @@ type
     pfRgba64, // R-G-B-A, 16 bits byte per color component
     pfArgb64, // A-R-G-B, native MAC format
     pfAbgr64, // A-B-G-R, one byte per color component
-    pfBgra64, // B-G-R-A, native win32 BMP format
+    pfBgra64 // B-G-R-A, native win32 BMP format
   );
 
-const
-  // -------------------------------------------------------------input_flag_e
+
+  // -------------------------------------------------------------
   // Mouse and keyboard flags. They can be different on different platforms
   // and the ways they are obtained are also different. But in any case
   // the system dependent flags should be mapped into these ones. The meaning
@@ -135,10 +135,8 @@ const
   // probably supported on different platforms. Even the mouse_right flag
   // is restricted because Mac's mice have only one button, but AFAIK
   // it can be simulated with holding a special key on the keydoard.
-  Mouse_left = 1;
-  Mouse_right = 2;
-  Kbd_shift = 4;
-  Kbd_ctrl = 8;
+  TMouseKeyboardFlag = (mkfMouseLeft, mkfMouseRight, mkfShift, mkfCtrl);
+  TMouseKeyboardFlags = set of TMouseKeyboardFlag;
 
   // --------------------------------------------------------------key_code_e
   // Keyboard codes. There's also a restricted set of codes that are most
@@ -152,69 +150,70 @@ const
   // Actually the numeric key codes are taken from the SDL library, so,
   // the implementation of the SDL support does not require any mapping.
   // ASCII set. Should be supported everywhere
-  Cardinal(kcBackspace = 8;
-  Cardinal(kcTab = 9;
-  Cardinal(kcClear = 12;
-  Cardinal(kcReturn = 13;
-  Cardinal(kcPause = 19;
-  Cardinal(kcEscape = 27;
+const
+  kcBackspace = 8;
+  kcTab = 9;
+  kcClear = 12;
+  kcReturn = 13;
+  kcPause = 19;
+  kcEscape = 27;
 
   // Keypad
-  Cardinal(kcDelete = 127;
-  Cardinal(kcPad0 = 256;
-  Cardinal(kcPad1 = 257;
-  Cardinal(kcPad2 = 258;
-  Cardinal(kcPad3 = 259;
-  Cardinal(kcPad4 = 260;
-  Cardinal(kcPad5 = 261;
-  Cardinal(kcPad6 = 262;
-  Cardinal(kcPad7 = 263;
-  Cardinal(kcPad8 = 264;
-  Cardinal(kcPad9 = 265;
-  Cardinal(kcPadPeriod = 266;
-  Cardinal(kcPadDivide = 267;
-  Cardinal(kcPadMultiply = 268;
-  Cardinal(kcPadMinus = 269;
-  Cardinal(kcPadPlus = 270;
-  Cardinal(kcPadEnter = 271;
-  Cardinal(kcPadEquals = 272;
+  kcDelete = 127;
+  kcPad0 = 256;
+  kcPad1 = 257;
+  kcPad2 = 258;
+  kcPad3 = 259;
+  kcPad4 = 260;
+  kcPad5 = 261;
+  kcPad6 = 262;
+  kcPad7 = 263;
+  kcPad8 = 264;
+  kcPad9 = 265;
+  kcPadPeriod = 266;
+  kcPadDivide = 267;
+  kcPadMultiply = 268;
+  kcPadMinus = 269;
+  kcPadPlus = 270;
+  kcPadEnter = 271;
+  kcPadEquals = 272;
 
   // Arrow-keys and stuff
-  Cardinal(kcUp = 273;
-  Cardinal(kcDown = 274;
-  Cardinal(kcRight = 275;
-  Cardinal(kcLeft = 276;
-  Cardinal(kcInsert = 277;
-  Cardinal(kcHome = 278;
-  Cardinal(kcEnd = 279;
-  Cardinal(kcPageUp = 280;
-  Cardinal(kcPageDown = 281;
+  kcUp = 273;
+  kcDown = 274;
+  kcRight = 275;
+  kcLeft = 276;
+  kcInsert = 277;
+  kcHome = 278;
+  kcEnd = 279;
+  kcPageUp = 280;
+  kcPageDown = 281;
 
   // Functional keys. You'd better avoid using
   // f11...f15 in your applications if you want
   // the applications to be portable
-  Cardinal(kcF1 = 282;
-  Cardinal(kcF2 = 283;
-  Cardinal(kcF3 = 284;
-  Cardinal(kcF4 = 285;
-  Cardinal(kcF5 = 286;
-  Cardinal(kcF6 = 287;
-  Cardinal(kcF7 = 288;
-  Cardinal(kcF8 = 289;
-  Cardinal(kcF9 = 290;
-  Cardinal(kcF10 = 291;
-  Cardinal(kcF11 = 292;
-  Cardinal(kcF12 = 293;
-  Cardinal(kcF13 = 294;
-  Cardinal(kcF14 = 295;
-  Cardinal(kcF15 = 296;
+  kcF1 = 282;
+  kcF2 = 283;
+  kcF3 = 284;
+  kcF4 = 285;
+  kcF5 = 286;
+  kcF6 = 287;
+  kcF7 = 288;
+  kcF8 = 289;
+  kcF9 = 290;
+  kcF10 = 291;
+  kcF11 = 292;
+  kcF12 = 293;
+  kcF13 = 294;
+  kcF14 = 295;
+  kcF15 = 296;
 
   // The possibility of using these keys is
   // very restricted. Actually it's guaranteed
   // only in win32_api and win32_sdl implementations
-  Cardinal(kcNumlock = 300;
-  Cardinal(kcCapslock = 301;
-  Cardinal(kcScrollLock = 302;
+  kcNumlock = 300;
+  kcCapslock = 301;
+  kcScrollLock = 302;
 
   CMaxControl = 128;
 
@@ -307,7 +306,7 @@ type
     FUpdateFlag, FResizeFlag, FInitialized: Boolean;
 
     // FWaitMode : boolean;
-    FSwStart: Clock_t;
+    FSwStart: TDateTime;
   public
     constructor Create(Format: TPixelFormat; FlipY: Boolean);
 
@@ -327,13 +326,13 @@ type
     FRenderingBufferWindow: TAggRenderingBuffer;
     FRenderingBufferImage: array [0..CMaxImages - 1] of TAggRenderingBuffer;
 
-    FWindowFlags: TWindowFlag;
+    FWindowFlags: TWindowFlags;
     FWaitMode, FFlipY: Boolean;
     // FlipY - true if you want to have the Y-axis flipped vertically
-    FCaption: ShortString;
+    FCaption: String;
     FResizeMatrix: TAggTransAffine;
 
-    FInitialWidth, GetInitialHeight: Integer;
+    FInitialWidth, FInitialHeight: Integer;
 
     FQuit: Boolean;
   public
@@ -343,8 +342,8 @@ type
     // Setting the windows caption (title). Should be able
     // to be called at least before calling init().
     // It's perfect if they can be called anytime.
-    procedure SetCaption(Cap: ShortString);
-
+    procedure SetCaption(Cap: string);
+    property Caption: string read FCaption write SetCaption;
     // These 3 menthods handle working with images. The image
     // formats are the simplest ones, such as .BMP in Windows or
     // .ppm in Linux. In the applications the names of the files
@@ -365,7 +364,7 @@ type
     // some OnInit() event handler when the window is created but
     // not yet displayed. The RenderingBufferWindow() method (see below) is
     // accessible from OnInit().
-    function Init(AWidth, AHeight: Cardinal; Flags: TWindowFlag): Boolean;
+    function Init(AWidth, AHeight: Cardinal; Flags: TWindowFlags): Boolean;
     function Run: Integer;
     procedure Quit;
 
@@ -403,12 +402,14 @@ type
     // combined somehow with the RenderingBufferWindow(). RenderingBufferWindow() is
     // the only buffer that can be actually displayed.
     function RenderingBufferWindow: TAggRenderingBuffer;
-    function RenderingBufferImage(Index: Cardinal): TAggRenderingBuffer;
+    function GetRenderingBufferImage(Index: Cardinal): TAggRenderingBuffer;
+    property RenderingBufferImage[Index: Cardinal]: TAggRenderingBuffer read
+      GetRenderingBufferImage;
 
     // Returns file extension used in the implemenation for the particular
     // system.
     function GetImageExtension: ShortString;
-
+    property ImageExtension: ShortString read GetImageExtension;
     //
     procedure CopyImageToWindow(Index: Cardinal);
     procedure CopyWindowToImage(Index: Cardinal);
@@ -458,11 +459,11 @@ type
     procedure SetTransAffineResizing(AWidth, AHeight: Integer);
     function GetTransAffineResizing: TAggTransAffine;
 
-    function GetWidth: Double;
-    function GetHeight: Double;
+    function Width: Double;
+    function Height: Double;
     function GetInitialWidth: Double;
     function GetInitialHeight: Double;
-    function GetWindowFlags: Cardinal;
+    function GetWindowFlags: TWindowFlags;
 
     // Get raw display handler depending on the system.
     // For win32 its an HDC, for other systems it can be a pointer to some
@@ -658,68 +659,68 @@ begin
   for I := 0 to 255 do
     FKeymap[I] := I;
 
-  FKeymap[XK_Pause and $FF] := Cardinal(kcPause;
-  FKeymap[XK_Clear and $FF] := Cardinal(kcClear;
+  FKeymap[XK_Pause and $FF] := kcPause;
+  FKeymap[XK_Clear and $FF] := kcClear;
 
-  FKeymap[XK_KP_0 and $FF] := Cardinal(kcPad0;
-  FKeymap[XK_KP_1 and $FF] := Cardinal(kcPad1;
-  FKeymap[XK_KP_2 and $FF] := Cardinal(kcPad2;
-  FKeymap[XK_KP_3 and $FF] := Cardinal(kcPad3;
-  FKeymap[XK_KP_4 and $FF] := Cardinal(kcPad4;
-  FKeymap[XK_KP_5 and $FF] := Cardinal(kcPad5;
-  FKeymap[XK_KP_6 and $FF] := Cardinal(kcPad6;
-  FKeymap[XK_KP_7 and $FF] := Cardinal(kcPad7;
-  FKeymap[XK_KP_8 and $FF] := Cardinal(kcPad8;
-  FKeymap[XK_KP_9 and $FF] := Cardinal(kcPad9;
+  FKeymap[XK_KP_0 and $FF] := kcPad0;
+  FKeymap[XK_KP_1 and $FF] := kcPad1;
+  FKeymap[XK_KP_2 and $FF] := kcPad2;
+  FKeymap[XK_KP_3 and $FF] := kcPad3;
+  FKeymap[XK_KP_4 and $FF] := kcPad4;
+  FKeymap[XK_KP_5 and $FF] := kcPad5;
+  FKeymap[XK_KP_6 and $FF] := kcPad6;
+  FKeymap[XK_KP_7 and $FF] := kcPad7;
+  FKeymap[XK_KP_8 and $FF] := kcPad8;
+  FKeymap[XK_KP_9 and $FF] := kcPad9;
 
-  FKeymap[XK_KP_Insert and $FF] := Cardinal(kcPad0;
-  FKeymap[XK_KP_End and $FF] := Cardinal(kcPad1;
-  FKeymap[XK_KP_Down and $FF] := Cardinal(kcPad2;
-  FKeymap[XK_KP_Page_Down and $FF] := Cardinal(kcPad3;
-  FKeymap[XK_KP_Left and $FF] := Cardinal(kcPad4;
-  FKeymap[XK_KP_Begin and $FF] := Cardinal(kcPad5;
-  FKeymap[XK_KP_Right and $FF] := Cardinal(kcPad6;
-  FKeymap[XK_KP_Home and $FF] := Cardinal(kcPad7;
-  FKeymap[XK_KP_Up and $FF] := Cardinal(kcPad8;
-  FKeymap[XK_KP_Page_Up and $FF] := Cardinal(kcPad9;
-  FKeymap[XK_KP_Delete and $FF] := Cardinal(kcPadPeriod;
-  FKeymap[XK_KP_Decimal and $FF] := Cardinal(kcPadPeriod;
-  FKeymap[XK_KP_Divide and $FF] := Cardinal(kcPadDivide;
-  FKeymap[XK_KP_Multiply and $FF] := Cardinal(kcPadMultiply;
-  FKeymap[XK_KP_Subtract and $FF] := Cardinal(kcPadMinus;
-  FKeymap[XK_KP_Add and $FF] := Cardinal(kcPadPlus;
-  FKeymap[XK_KP_Enter and $FF] := Cardinal(kcPadEnter;
-  FKeymap[XK_KP_Equal and $FF] := Cardinal(kcPadEquals;
+  FKeymap[XK_KP_Insert and $FF] := kcPad0;
+  FKeymap[XK_KP_End and $FF] := kcPad1;
+  FKeymap[XK_KP_Down and $FF] := kcPad2;
+  FKeymap[XK_KP_Page_Down and $FF] := kcPad3;
+  FKeymap[XK_KP_Left and $FF] := kcPad4;
+  FKeymap[XK_KP_Begin and $FF] := kcPad5;
+  FKeymap[XK_KP_Right and $FF] := kcPad6;
+  FKeymap[XK_KP_Home and $FF] := kcPad7;
+  FKeymap[XK_KP_Up and $FF] := kcPad8;
+  FKeymap[XK_KP_Page_Up and $FF] := kcPad9;
+  FKeymap[XK_KP_Delete and $FF] := kcPadPeriod;
+  FKeymap[XK_KP_Decimal and $FF] := kcPadPeriod;
+  FKeymap[XK_KP_Divide and $FF] := kcPadDivide;
+  FKeymap[XK_KP_Multiply and $FF] := kcPadMultiply;
+  FKeymap[XK_KP_Subtract and $FF] := kcPadMinus;
+  FKeymap[XK_KP_Add and $FF] := kcPadPlus;
+  FKeymap[XK_KP_Enter and $FF] := kcPadEnter;
+  FKeymap[XK_KP_Equal and $FF] := kcPadEquals;
 
-  FKeymap[XK_Up and $FF] := Cardinal(kcUp;
-  FKeymap[XK_Down and $FF] := Cardinal(kcDown;
-  FKeymap[XK_Right and $FF] := Cardinal(kcRight;
-  FKeymap[XK_Left and $FF] := Cardinal(kcLeft;
-  FKeymap[XK_Insert and $FF] := Cardinal(kcInsert;
-  FKeymap[XK_Home and $FF] := Cardinal(kcDelete;
-  FKeymap[XK_End and $FF] := Cardinal(kcEnd;
-  FKeymap[XK_Page_Up and $FF] := Cardinal(kcPageUp;
-  FKeymap[XK_Page_Down and $FF] := Cardinal(kcPageDown;
+  FKeymap[XK_Up and $FF] := kcUp;
+  FKeymap[XK_Down and $FF] := kcDown;
+  FKeymap[XK_Right and $FF] := kcRight;
+  FKeymap[XK_Left and $FF] := kcLeft;
+  FKeymap[XK_Insert and $FF] := kcInsert;
+  FKeymap[XK_Home and $FF] := kcDelete;
+  FKeymap[XK_End and $FF] := kcEnd;
+  FKeymap[XK_Page_Up and $FF] := kcPageUp;
+  FKeymap[XK_Page_Down and $FF] := kcPageDown;
 
-  FKeymap[XK_F1 and $FF] := Cardinal(kcF1;
-  FKeymap[XK_F2 and $FF] := Cardinal(kcF2;
-  FKeymap[XK_F3 and $FF] := Cardinal(kcF3;
-  FKeymap[XK_F4 and $FF] := Cardinal(kcF4;
-  FKeymap[XK_F5 and $FF] := Cardinal(kcF5;
-  FKeymap[XK_F6 and $FF] := Cardinal(kcF6;
-  FKeymap[XK_F7 and $FF] := Cardinal(kcF7;
-  FKeymap[XK_F8 and $FF] := Cardinal(kcF8;
-  FKeymap[XK_F9 and $FF] := Cardinal(kcF9;
-  FKeymap[XK_F10 and $FF] := Cardinal(kcF10;
-  FKeymap[XK_F11 and $FF] := Cardinal(kcF11;
-  FKeymap[XK_F12 and $FF] := Cardinal(kcF12;
-  FKeymap[XK_F13 and $FF] := Cardinal(kcF13;
-  FKeymap[XK_F14 and $FF] := Cardinal(kcF14;
-  FKeymap[XK_F15 and $FF] := Cardinal(kcF15;
+  FKeymap[XK_F1 and $FF] := kcF1;
+  FKeymap[XK_F2 and $FF] := kcF2;
+  FKeymap[XK_F3 and $FF] := kcF3;
+  FKeymap[XK_F4 and $FF] := kcF4;
+  FKeymap[XK_F5 and $FF] := kcF5;
+  FKeymap[XK_F6 and $FF] := kcF6;
+  FKeymap[XK_F7 and $FF] := kcF7;
+  FKeymap[XK_F8 and $FF] := kcF8;
+  FKeymap[XK_F9 and $FF] := kcF9;
+  FKeymap[XK_F10 and $FF] :=kcF10;
+  FKeymap[XK_F11 and $FF] :=kcF11;
+  FKeymap[XK_F12 and $FF] :=kcF12;
+  FKeymap[XK_F13 and $FF] :=kcF13;
+  FKeymap[XK_F14 and $FF] :=kcF14;
+  FKeymap[XK_F15 and $FF] :=kcF15;
 
-  FKeymap[XK_Num_Lock and $FF] := Cardinal(kcNumlock;
-  FKeymap[XK_Caps_Lock and $FF] := Cardinal(kcCapslock;
-  FKeymap[XK_Scroll_Lock and $FF] := Cardinal(kcScrollLock;
+  FKeymap[XK_Num_Lock and $FF] := kcNumlock;
+  FKeymap[XK_Caps_Lock and $FF] := kcCapslock;
+  FKeymap[XK_Scroll_Lock and $FF] := kcScrollLock;
 
   case FPixelFormat of
     pfGray8:
@@ -736,7 +737,7 @@ begin
 
   end;
 
-  FSwStart := Clock;
+  FSwStart := Time;
 end;
 
 procedure TPlatformSpecific.SetCaption;
@@ -767,20 +768,20 @@ begin
   FXImageWindow.Data := FBufferWindow;
 
   if FPixelFormat = FSystemFormat then
-    XPut_Image(FDisplay, FWindow, FGraphicContext, FXImageWindow, 0, 0, 0, 0, 
-      Src.GetWidth, Src.GetHeight)
+    XPutImage(FDisplay, FWindow, FGraphicContext, FXImageWindow, 0, 0, 0, 0,
+      Src.Width, Src.Height)
   else
   begin
-    RowLength := Src.GetWidth * FSystemBitsPerPixel div 8;
+    RowLength := Src.Width * FSystemBitsPerPixel div 8;
 
-    AggGetMem(TempBuffer, RowLength * Src.GetHeight);
+    AggGetMem(TempBuffer, RowLength * Src.Height);
 
-    TempRenderingBuffer.Create;
+    TempRenderingBuffer := TAggRenderingBuffer.Create;
 
     if FFlipY then
-      TempRenderingBuffer.Attach(TempBuffer, Src.GetWidth, Src.GetHeight, -RowLength)
+      TempRenderingBuffer.Attach(TempBuffer, Src.Width, Src.Height, -RowLength)
     else
-      TempRenderingBuffer.Attach(TempBuffer, Src.GetWidth, Src.GetHeight, RowLength);
+      TempRenderingBuffer.Attach(TempBuffer, Src.Width, Src.Height, RowLength);
 
     case FSystemFormat of
       pfRgb555:
@@ -832,60 +833,60 @@ begin
       pfAbgr32:
         case FPixelFormat of
           pfRgb555:
-            ColorConversion(@TempRenderingBuffer, Src, ColorConversionRgb555ToAbgr32);
+            ColorConversion(TempRenderingBuffer, Src, ColorConversionRgb555ToAbgr32);
           // pix_formatRgb565 : ColorConversion(@TempRenderingBuffer ,src ,ColorConversionRgb565To_abgr32 );
           // pix_formatRgb24  : ColorConversion(@TempRenderingBuffer ,src ,ColorConversionRgb24To_abgr32 );
           pfBgr24:
-            ColorConversion(@TempRenderingBuffer, Src, ColorConversionBgr24ToAbgr32);
+            ColorConversion(TempRenderingBuffer, Src, ColorConversionBgr24ToAbgr32);
           // pix_format_abgr32 : ColorConversion(@TempRenderingBuffer ,src ,ColorConversionAbgr32To_abgr32 );
           // pix_formatRgba32 : ColorConversion(@TempRenderingBuffer ,src ,ColorConversionRgba32To_abgr32 );
           // pix_format_argb32 : ColorConversion(@TempRenderingBuffer ,src ,ColorConversionArgb32To_abgr32 );
           pfBgra32:
-            ColorConversion(@TempRenderingBuffer, Src, ColorConversionBgra32ToAbgr32);
+            ColorConversion(TempRenderingBuffer, Src, ColorConversionBgra32ToAbgr32);
         end;
 
       pfArgb32:
         case FPixelFormat of
           pfRgb555:
-            ColorConversion(@TempRenderingBuffer, Src, ColorConversionRgb555ToArgb32);
+            ColorConversion(TempRenderingBuffer, Src, ColorConversionRgb555ToArgb32);
           // pix_formatRgb565 : ColorConversion(@TempRenderingBuffer ,src ,ColorConversionRgb565To_argb32 );
           // pix_formatRgb24  : ColorConversion(@TempRenderingBuffer ,src ,ColorConversionRgb24To_argb32 );
           pfBgr24:
-            ColorConversion(@TempRenderingBuffer, Src, ColorConversionBgr24ToArgb32);
+            ColorConversion(TempRenderingBuffer, Src, ColorConversionBgr24ToArgb32);
           pfRgba32:
-            ColorConversion(@TempRenderingBuffer, Src, ColorConversionRgba32ToArgb32);
+            ColorConversion(TempRenderingBuffer, Src, ColorConversionRgba32ToArgb32);
           // pix_format_argb32 : ColorConversion(@TempRenderingBuffer ,src ,ColorConversionArgb32To_argb32 );
           pfAbgr32:
-            ColorConversion(@TempRenderingBuffer, Src, ColorConversionAbgr32ToArgb32);
+            ColorConversion(TempRenderingBuffer, Src, ColorConversionAbgr32ToArgb32);
           pfBgra32:
-            ColorConversion(@TempRenderingBuffer, Src, ColorConversionBgra32ToArgb32);
+            ColorConversion(TempRenderingBuffer, Src, ColorConversionBgra32ToArgb32);
         end;
 
       pfBgra32:
         case FPixelFormat of
           pfRgb555:
-            ColorConversion(@TempRenderingBuffer, Src, ColorConversionRgb555ToBgra32);
+            ColorConversion(TempRenderingBuffer, Src, ColorConversionRgb555ToBgra32);
           // pix_formatRgb565 : ColorConversion(@TempRenderingBuffer ,src ,ColorConversionRgb565To_bgra32 );
           // pix_formatRgb24  : ColorConversion(@TempRenderingBuffer ,src ,ColorConversionRgb24ToBgra32 );
           pfBgr24:
-            ColorConversion(@TempRenderingBuffer, Src, ColorConversionBgr24ToBgra32);
+            ColorConversion(TempRenderingBuffer, Src, ColorConversionBgr24ToBgra32);
           pfRgba32:
-            ColorConversion(@TempRenderingBuffer, Src, ColorConversionRgba32ToBgra32);
+            ColorConversion(TempRenderingBuffer, Src, ColorConversionRgba32ToBgra32);
           pfArgb32:
-            ColorConversion(@TempRenderingBuffer, Src, ColorConversionArgb32ToBgra32);
+            ColorConversion(TempRenderingBuffer, Src, ColorConversionArgb32ToBgra32);
           pfAbgr32:
-            ColorConversion(@TempRenderingBuffer, Src, ColorConversionAbgr32ToBgra32);
+            ColorConversion(TempRenderingBuffer, Src, ColorConversionAbgr32ToBgra32);
           pfBgra32:
-            ColorConversion(@TempRenderingBuffer, Src, ColorConversionBgra32ToBgra32);
+            ColorConversion(TempRenderingBuffer, Src, ColorConversionBgra32ToBgra32);
         end;
     end;
 
     FXImageWindow.Data := TempBuffer;
 
-    XPut_Image(FDisplay, FWindow, FGraphicContext, FXImageWindow, 0, 0, 0, 0, 
-      Src.GetWidth, Src.GetHeight);
+    XPutImage(FDisplay, FWindow, FGraphicContext, FXImageWindow, 0, 0, 0, 0,
+      Src.Width, Src.Height);
 
-    AggFreeMem(TempBuffer, RowLength * Src.GetHeight);
+    AggFreeMem(TempBuffer, RowLength * Src.Height);
 
     TempRenderingBuffer.Free;
   end;
@@ -899,26 +900,26 @@ var
   I: Cardinal;
   P, N, X: ShortString;
 begin
-  New(FSpecific, Create(Format_, FlipY));
+  FSpecific := TPlatformSpecific.Create(pfRgba32, FlipY);
 
   FControls := TControlContainer.Create;
-  FRenderingBufferWindow.Create;
+  FRenderingBufferWindow := TAggRenderingBuffer.Create;
 
   for I := 0 to CMaxImages - 1 do
-    FRenderingBufferImage[I].Create;
+    FRenderingBufferImage[I] := TAggRenderingBuffer.Create;
 
-  FResizeMatrix.Create;
+  FResizeMatrix := TAggTransAffine.Create;
 
-  FPixelFormat := Format_;
+  FPixelFormat := PixelFormat;
 
   FBitsPerPixel := FSpecific.FBitsPerPixel;
 
-  FWindowFlags := 0;
+  FWindowFlags := [];
   FWaitMode := True;
   FFlipY := FlipY;
 
   FInitialWidth := 10;
-  GetInitialHeight := 10;
+  FInitialHeight := 10;
 
   FCaption := 'Anti-Grain Geometry Application'#0;
 
@@ -927,7 +928,7 @@ begin
 
   P := P + #0;
 
-  Libc.__chdir(PAnsiChar(@P[1]));
+ chdir(P);
 
 end;
 
@@ -948,10 +949,6 @@ end;
 
 procedure TPlatformSupport.SetCaption;
 begin
-  FCaption := Cap + #0;
-
-  Dec(Byte(FCaption[0]));
-
   if FSpecific.FInitialized then
     FSpecific.SetCaption(PAnsiChar(@FCaption[1]));
 end;
@@ -996,7 +993,7 @@ function TPlatformSupport.LoadImage;
 var
   Fd : file;
   Buf: array [0..1023] of AnsiChar;
-  Len: Integer;
+  Len: Word;
   Ptr: PAnsiChar;
   Ret: Boolean;
 
@@ -1012,10 +1009,10 @@ begin
     File_ := File_ + GetImageExtension;
 
     if not FileExists(File_) then
-      File_ := 'ppm/' + File_;
+      File_ := '/home/michal/ver/aggpasmod-code/Examples/Simple/' + File_;
 
     AssignFile(Fd, File_);
-    Reset(Fd, 1);
+    Reset(Fd, 1); // records are 1 byte
 
     if IOResult <> 0 then
       Exit;
@@ -1024,6 +1021,7 @@ begin
 
     if Len = 0 then
     begin
+      WriteLn('error was:', IOResult);
       Close(Fd);
       Exit;
     end;
@@ -1108,7 +1106,7 @@ begin
     begin
       AggGetMem(Buf_img, Width * Height * 3);
 
-      RenderingBufferImage_.Create;
+      RenderingBufferImage_ := TAggRenderingBuffer.Create;
 
       if FFlipY then
         RenderingBufferImage_.Attach(Buf_img, Width, Height, -Width * 3)
@@ -1121,11 +1119,11 @@ begin
         // pix_formatRgb555 : ColorConversion(@m_RenderingBufferImage[Index ] ,@RenderingBufferImage_ ,ColorConversionRgb24ToRgb555 );
         // pix_formatRgb565 : ColorConversion(@m_RenderingBufferImage[Index ] ,@RenderingBufferImage_ ,ColorConversionRgb24ToRgb565 );
         pfBgr24:
-          ColorConversion(@FRenderingBufferImage[Index], @RenderingBufferImage_, ColorConversionRgb24ToBgr24);
-        // pix_formatRgba32 : ColorConversion(@m_RenderingBufferImage[Index ] ,@RenderingBufferImage_ ,ColorConversionRgb24ToRgba32 );
-        // pix_format_argb32 : ColorConversion(@m_RenderingBufferImage[Index ] ,@RenderingBufferImage_ ,ColorConversionRgb24To_argb32 );
+          ColorConversion(FRenderingBufferImage[Index], RenderingBufferImage_, ColorConversionRgb24ToBgr24);
+        // pfRgba32 : ColorConversion(@FRenderingBufferImage[Index], @RenderingBufferImage_, ColorConversionRgb24ToRgba32 );
+        //pix_format_argb32 : ColorConversion(@m_RenderingBufferImage[Index ] ,@RenderingBufferImage_ ,ColorConversionRgb24To_argb32 );
         pfBgra32:
-          ColorConversion(@FRenderingBufferImage[Index], @RenderingBufferImage_, ColorConversionRgb24ToBgra32);
+          ColorConversion(FRenderingBufferImage[Index], RenderingBufferImage_, ColorConversionRgb24ToBgra32);
         // pix_format_abgr32 : ColorConversion(@m_RenderingBufferImage[Index ] ,@RenderingBufferImage_ ,ColorConversionRgb24To_abgr32 );
       else
         Ret := False;
@@ -1155,7 +1153,7 @@ var
 begin
   Result := False;
 
-  if (Index < CMaxImages) and (RenderingBufferImage(Index).GetBuffer <> nil) then
+  if (Index < CMaxImages) and (RenderingBufferImage[Index].Buffer <> nil) then
   begin
     AssignFile(Fd, File_);
     Rewrite(Fd, 1);
@@ -1163,8 +1161,8 @@ begin
     if IOResult <> 0 then
       Exit;
 
-    W := RenderingBufferImage(Index).GetWidth;
-    H := RenderingBufferImage(Index).GetHeight;
+    W := RenderingBufferImage[Index].Width;
+    H := RenderingBufferImage[Index].Height;
 
     Str(W, C);
 
@@ -1180,12 +1178,12 @@ begin
 
     Y := 0;
 
-    while Y < RenderingBufferImage(Index).GetHeight do
+    while Y < RenderingBufferImage[Index].Height do
     begin
       if FFlipY then
-        Src := RenderingBufferImage(Index).Row(H - 1 - Y)
+        Src := RenderingBufferImage[Index].Row(H - 1 - Y)
       else
-        Src := RenderingBufferImage(Index).Row(Y);
+        Src := RenderingBufferImage[Index].Row(Y);
 
       case FPixelFormat of
         pfRgb555:
@@ -1212,7 +1210,8 @@ begin
   end;
 end;
 
-function TPlatformSupport.CreateImage;
+function TPlatformSupport.CreateImage(Index: Cardinal; AWidth: Cardinal = 0;
+      AHeight: Cardinal = 0): Boolean;
 begin
   Result := False;
 
@@ -1241,7 +1240,7 @@ begin
   end;
 end;
 
-function TPlatformSupport.Init;
+function TPlatformSupport.Init(AWidth, AHeight: Cardinal; Flags: TWindowFlags): Boolean;
 const
   Xevent_mask = PointerMotionMask or ButtonPressMask or ButtonReleaseMask or
     ExposureMask or KeyPressMask or StructureNotifyMask;
@@ -1407,7 +1406,7 @@ begin
   FSpecific.FWindowAttributes.Background_pixel :=
     XWhitePixel(FSpecific.FDisplay, FSpecific.FScreen);
 
-  FSpecific.FWindowAttributes.Override_redirect := False;
+  FSpecific.FWindowAttributes.Override_redirect := 0; //False;
 
   Window_mask := CWBackPixel or CWBorderPixel;
 
@@ -1440,7 +1439,7 @@ begin
   FSpecific.SetCaption(PAnsiChar(@FCaption[1]));
 
   FInitialWidth := AWidth;
-  GetInitialHeight := AHeight;
+  FInitialHeight := AHeight;
 
   if not FSpecific.FInitialized then
   begin
@@ -1460,7 +1459,7 @@ begin
 
   if Hints <> nil then
   begin
-    if Flags and wfResize <> 0 then
+    if wfResize in Flags then
     begin
       Hints.Min_width := 32;
       Hints.Min_height := 32;
@@ -1499,7 +1498,8 @@ end;
 
 function TPlatformSupport.Run;
 var
-  Flags, I: Cardinal;
+  Flags : TMouseKeyboardFlags;
+  I: Cardinal;
   Cur_x, Cur_y, Width, Height: Integer;
   X_event, Te: TXEvent;
   Key: TKeySym;
@@ -1598,19 +1598,19 @@ begin
       KeyPress:
         begin
           Key := XLookupKeysym(@X_event.Xkey, 0);
-          Flags := 0;
+          Flags := [];
 
           if X_event.Xkey.State and Button1Mask <> 0 then
-            Flags := Flags or Mouse_left;
+            Flags := Flags + [mkfMouseLeft];
 
           if X_event.Xkey.State and Button3Mask <> 0 then
-            Flags := Flags or Mouse_right;
+            Flags := Flags + [mkfMouseRight];
 
           if X_event.Xkey.State and ShiftMask <> 0 then
-            Flags := Flags or Kbd_shift;
+            Flags := Flags + [mkfShift];
 
           if X_event.Xkey.State and ControlMask <> 0 then
-            Flags := Flags or Kbd_ctrl;
+            Flags := Flags + [mkfCtrl];
 
           Left := False;
           Up := False;
@@ -1618,16 +1618,16 @@ begin
           Down := False;
 
           case FSpecific.FKeymap[Key and $FF] of
-            Cardinal(kcLeft:
+            kcLeft:
               Left := True;
-            Cardinal(kcUp:
+            kcUp:
               Up := True;
-            Cardinal(kcRight:
+            kcRight:
               Right := True;
-            Cardinal(kcDown:
+            kcDown:
               Down := True;
 
-            Cardinal(kcF2:
+            kcF2:
               begin
                 CopyWindowToImage(CMaxImages - 1);
                 SaveImage(CMaxImages - 1, 'screenshot.ppm');
@@ -1649,19 +1649,19 @@ begin
 
       ButtonPress:
         begin
-          Flags := 0;
+          Flags := [];
 
           if X_event.Xbutton.State and ShiftMask <> 0 then
-            Flags := Flags or Kbd_shift;
+            Flags := Flags + [mkfShift];
 
           if X_event.Xbutton.State and ControlMask <> 0 then
-            Flags := Flags or Kbd_ctrl;
+            Flags := Flags + [mkfCtrl];
 
           if X_event.Xbutton.Button = Button1 then
-            Flags := Flags or Mouse_left;
+            Flags := Flags + [mkfMouseLeft];
 
           if X_event.Xbutton.Button = Button3 then
-            Flags := Flags or Mouse_right;
+            Flags := Flags + [mkfMouseRight];
 
           Cur_x := X_event.Xbutton.X;
 
@@ -1696,19 +1696,19 @@ begin
 
       MotionNotify:
         begin
-          Flags := 0;
+          Flags := [];
 
           if X_event.Xmotion.State and Button1Mask <> 0 then
-            Flags := Flags or Mouse_left;
+            Flags := Flags + [mkfMouseLeft];
 
           if X_event.Xmotion.State and Button3Mask <> 0 then
-            Flags := Flags or Mouse_right;
+            Flags := Flags + [mkfMouseRight];
 
           if X_event.Xmotion.State and ShiftMask <> 0 then
-            Flags := Flags or Kbd_shift;
+            Flags := Flags + [mkfShift];
 
           if X_event.Xmotion.State and ControlMask <> 0 then
-            Flags := Flags or Kbd_ctrl;
+            Flags := Flags + [mkfCtrl];
 
           Cur_x := X_event.Xbutton.X;
 
@@ -1728,19 +1728,19 @@ begin
 
       ButtonRelease:
         begin
-          Flags := 0;
+          Flags := [];
 
           if X_event.Xbutton.State and ShiftMask <> 0 then
-            Flags := Flags or Kbd_shift;
+            Flags := Flags + [mkfShift];
 
           if X_event.Xbutton.State and ControlMask <> 0 then
-            Flags := Flags or Kbd_ctrl;
+            Flags := Flags + [mkfCtrl];
 
           if X_event.Xbutton.Button = Button1 then
-            Flags := Flags or Mouse_left;
+            Flags := Flags + [mkfMouseLeft];
 
           if X_event.Xbutton.Button = Button3 then
-            Flags := Flags or Mouse_right;
+            Flags := Flags + [mkfMouseRight];
 
           Cur_x := X_event.Xbutton.X;
 
@@ -1756,7 +1756,7 @@ begin
               ForceRedraw;
             end;
 
-          if Flags and (Mouse_left or Mouse_right) <> 0 then
+          if (mkfMouseLeft in flags) or (mkfMouseRight in flags) then
             OnMouseButtonUp(Cur_x, Cur_y, Flags);
 
           // FWaitMode:=FSpecific.FWaitMode;
@@ -1828,7 +1828,7 @@ end;
 
 procedure TPlatformSupport.UpdateWindow;
 begin
-  FSpecific.Put_image(@FRenderingBufferWindow);
+  FSpecific.Put_image(FRenderingBufferWindow);
 
   // When FWaitMode is true we can discard all the events
   // came while the image is being drawn. In this case
@@ -1840,12 +1840,12 @@ end;
 
 function TPlatformSupport.RenderingBufferWindow;
 begin
-  Result := @FRenderingBufferWindow;
+  Result := FRenderingBufferWindow;
 end;
 
-function TPlatformSupport.RenderingBufferImage;
+function TPlatformSupport.GetRenderingBufferImage;
 begin
-  Result := @FRenderingBufferImage[Index];
+  Result := FRenderingBufferImage[Index];
 end;
 
 function TPlatformSupport.GetImageExtension;
@@ -1855,8 +1855,8 @@ end;
 
 procedure TPlatformSupport.CopyImageToWindow;
 begin
-  if (Index < CMaxImages) and (RenderingBufferImage(Index).GetBuffer <> nil) then
-    RenderingBufferWindow.CopyFrom(RenderingBufferImage(Index));
+  if (Index < CMaxImages) and (RenderingBufferImage[Index].Buffer <> nil) then
+    RenderingBufferWindow.CopyFrom(RenderingBufferImage[Index]);
 end;
 
 procedure TPlatformSupport.CopyWindowToImage;
@@ -1864,18 +1864,18 @@ begin
   if Index < CMaxImages then
   begin
     CreateImage(Index, RenderingBufferWindow.Width, RenderingBufferWindow.Height);
-    RenderingBufferImage(Index).CopyFrom(RenderingBufferWindow);
+    RenderingBufferImage[Index].CopyFrom(RenderingBufferWindow);
   end;
 end;
 
 procedure TPlatformSupport.CopyImageToImage;
 begin
   if (IndexFrom < CMaxImages) and (IndexTo < CMaxImages) and
-    (RenderingBufferImage(IndexFrom).GetBuffer <> nil) then
+    (RenderingBufferImage[IndexFrom].Buffer <> nil) then
   begin
-    CreateImage(IndexTo, RenderingBufferImage(IndexFrom).GetWidth, RenderingBufferImage(IndexFrom).GetHeight);
+    CreateImage(IndexTo, RenderingBufferImage[IndexFrom].Width, RenderingBufferImage[IndexFrom].Height);
 
-    RenderingBufferImage(IndexTo).CopyFrom(RenderingBufferImage(IndexFrom));
+    RenderingBufferImage[IndexTo].CopyFrom(RenderingBufferImage[IndexFrom]);
   end;
 end;
 
@@ -1891,15 +1891,15 @@ procedure TPlatformSupport.OnIdle;
 begin
 end;
 
-procedure TPlatformSupport.OnMouseMove(X, Y: Double; ButtonFlag: Boolean): Boolean;
+procedure TPlatformSupport.OnMouseMove;
 begin
 end;
 
-procedure TPlatformSupport.OnMouseButtonDown(X, Y: Double): Boolean;
+procedure TPlatformSupport.OnMouseButtonDown;
 begin
 end;
 
-procedure TPlatformSupport.OnMouseButtonUp(X, Y: Double): Boolean;
+procedure TPlatformSupport.OnMouseButtonUp;
 begin
 end;
 
@@ -1919,7 +1919,7 @@ procedure TPlatformSupport.OnPostDraw;
 begin
 end;
 
-procedure TPlatformSupport.Add_ctrl;
+procedure TPlatformSupport.AddControl;
 begin
   FControls.Add(C);
 
@@ -1931,9 +1931,9 @@ var
   Vp: TAggTransViewport;
   Ts: TAggTransAffineScaling;
 begin
-  if FWindowFlags and wfKeepAspectRatio <> 0 then
+  if wfKeepAspectRatio in FWindowFlags then
   begin
-    Vp.Create;
+    Vp := TaggTransViewport.Create;
     Vp.PreserveAspectRatio(0.5, 0.5, arMeet);
 
     Vp.DeviceViewport(0, 0, AWidth, AHeight);
@@ -1943,7 +1943,7 @@ begin
   end
   else
   begin
-    Ts.Create(AWidth / FInitialWidth, AHeight / GetInitialHeight);
+    Ts := TaggTransAffineScaling.Create(AWidth / FInitialWidth, AHeight / GetInitialHeight);
 
     FResizeMatrix.Assign(@Ts);
   end;
@@ -1954,24 +1954,24 @@ begin
   Result := @FResizeMatrix;
 end;
 
-function TPlatformSupport.GetWidth;
+function TPlatformSupport.Width;
 begin
   Result := FRenderingBufferWindow.Width;
 end;
 
-function TPlatformSupport.GetHeight;
+function TPlatformSupport.Height;
 begin
   Result := FRenderingBufferWindow.Height;
 end;
 
-function TPlatformSupport.Initial_width;
+function TPlatformSupport.GetInitialWidth;
 begin
   Result := FInitialWidth;
 end;
 
-function TPlatformSupport.Initial_height;
+function TPlatformSupport.GetInitialHeight;
 begin
-  Result := GetInitialHeight;
+  Result := FInitialHeight;
 end;
 
 function TPlatformSupport.GetWindowFlags;
@@ -2157,19 +2157,18 @@ end;
 
 procedure TPlatformSupport.StartTimer;
 begin
-  FSpecific.FSwStart := Clock;
+  FSpecific.FSwStart := Now;
 end;
 
-function TPlatformSupport.Elapsed_time;
+function TPlatformSupport.GetElapsedTime;
 var
-  Stop: Clock_t;
+  Stop: TDateTime;
 begin
-  Stop := Clock;
-
-  Result := (Stop - FSpecific.FSwStart) * 1000.0 / CLOCKS_PER_SEC;
+  Stop := Now;
+  Result := (Stop - FSpecific.FSwStart) * 1000.0;
 end;
 
-function TPlatformSupport.Full_file_name;
+function TPlatformSupport.FullFileName;
 begin
   Result := FileName;
 end;
@@ -2194,4 +2193,4 @@ begin
   E := Ioresult;
 end;
 
-end.
+end.

@@ -4,6 +4,7 @@
 
 
 { CPU }
+{$DEFINE PUREPASCAL}
 
 {$IFDEF CPUPOWERPC}
   {$DEFINE AGG_CPU_PPC}
@@ -14,7 +15,7 @@
 {$ENDIF}
 
 {$IFDEF CPU386}
-  {$DEFINE AGG_CPU_386}
+  {--$DEFINE AGG_CPU_386}
 {$ENDIF}
 
 {$IFDEF FPC}
@@ -126,4 +127,4 @@
   {$IFNDEF FPC}
     {$Y-} { References Info OFF }
   {$ENDIF}
-{$ENDIF}
+{$ENDIF}
